@@ -1,0 +1,93 @@
+.wrap {
+    padding:0;
+    margin:0;
+}
+
+.fleft {
+    float: left;
+    width: 50%;
+    background: pink;
+    height: -webkit-fill-available;
+    box-sizing: border-box;
+}
+
+.fright {
+    float: right;
+    background:#78C1CA;
+    height: -webkit-fill-available;
+    width: 50%;
+    box-sizing:border-box;
+
+}
+.box
+{
+    width: 800px;
+    padding-top: 50px;
+    padding-left: 150px;
+    display: block;
+    align-items: center;
+}
+.vsensor{
+    font-size: 40px;
+    font-weight: 900;
+    color: #FFFBF0;
+    padding-left: 75px;
+    padding-top: 100px;
+}
+.phone {
+    position: absolute;
+    width: 233px;
+    padding-left: 200px;
+}
+.t {
+    font-size: 20px;
+    color: #EDFFFF;
+    padding-top: 70px;
+    position: absolute;
+    padding-left: 225px;
+}
+.p {
+    font-size: 20px;
+    color: #EDFFFF;
+    padding-top: 110px;
+    position: absolute;
+    padding-left: 225px;
+}
+.h {
+    font-size: 20px;
+    color: #EDFFFF;
+    padding-top: 150px;
+    position: absolute;
+    padding-left: 225px;
+}
+.o3 {
+    font-size: 20px;
+    color: #EDFFFF;
+    padding-top: 190px;
+    position: absolute;
+    padding-left: 225px;
+}
+.c {
+    font-size: 14px;
+    color: #EDFFFF;
+    padding-top: 230px;
+    position: absolute;
+    padding-left: 225px;
+}
+
+.time {
+    font-size: 14px;
+    color: #EDFFFF;
+    padding-top: 270px;
+    position: absolute;
+    padding-left: 225px;
+}
+
+.fetch{
+    padding-top: 475px;
+    padding-left: 250px;
+}
+
+.submit{
+    padding-left: 100px;
+}

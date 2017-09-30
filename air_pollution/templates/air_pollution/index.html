@@ -1,0 +1,150 @@
+{% load static %}
+<head>
+    <link rel="stylesheet" href="{% static 'style.css' %}" >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="{% static 'normalize.css' %}">
+    <link rel="stylesheet" href="{% static 'skeleton.css' %}">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="{% static 'js.cookie.js' %}"></script>
+    <title>Virtual Sensor Demo</title>
+</head>
+<body class="wrap">
+<div class="fleft">
+    <div class="vsensor">Virtual Sensor (Publisher)</div>
+        {% csrf_token %}
+        <div class="box">
+            <div class="row">
+              <div class="seven columns">
+                  <label class="four columns" for="temperature">Temperature</label>
+                  <input type="number" placeholder="{{temperature}}" value="{{temperature}}" step="0.001" id="temperature" name="temperature" class="three columns">
+              </div>
+            </div>
+            <div class="row">
+              <div class="seven columns">
+                  <label class="four columns" for="pressure">Pressure</label>
+                  <input type="number" placeholder="{{pressure}}" value="{{pressure}}"  step="0.001" id="pressure" name="pressure" class="three columns">
+              </div>
+            </div>
+            <div class="row">
+              <div class="seven columns">
+                  <label class="four columns" for="humidity">Humidity</label>
+                  <input type="number" placeholder="{{humidity}}" value="{{humidity}}"  step="0.001" id="humidity" name="humidity" class="three columns">
+              </div>
+            </div>
+            <div class="row">
+              <div class="seven columns">
+                  <label class="four columns" for="ozone">Ozone</label>
+                  <input type="number" placeholder="{{ozone}}" value="{{ozone}}"  step="0.001" id="ozone" name="ozone" class="three columns">
+              </div>
+            </div>
+            <div class="row">
+              <div class="seven columns">
+                  <label class="four columns" for="time">Epoch Time</label>
+                  <input type="number" placeholder="{{time}}" value="{{time}}" id="time" name="time" class="six columns" readonly>
+              </div>
+            </div>
+            <div class="row">
+              <div class="seven columns">
+                  <label class="four columns" for="city">City</label>
+                  <input type="text" placeholder="{{city}}" value="{{city}}" id="city" name="city" class="six columns" readonly>
+              </div>
+            </div>
+            <br>
+            <div class="row">
+              <div class="seven columns submit">
+                  <input class="four columns button-primary" id="submit" type="submit" value="submit">
+              </div>
+            </div>
+        </div>
+</div>
+<div class="fright">
+    <div >
+        <div class="vsensor">Virtual Application (Subscriber)</div>
+        <img class="phone" src="{% static 'phone.png' %}">
+        <div class="t">{{display_temperature}}</div>
+        <div class="p">{{display_pressure}}</div>
+        <div class="h">{{display_humidity}}</div>
+        <div class="o3">{{display_ozone}}</div>
+        <div class="c">{{display_city}}</div>
+        <div class="time">{{display_time}}</div>
+    </div>
+            <div class="fetch">
+                <input class="button-primary" id="fetch" type="submit" value="FETCH">
+        </div>
+</div>
+<script type="text/javascript">
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie != '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+$("#submit").click(function(){
+    var csrftoken = getCookie('csrftoken');
+    console.log({'X-CSRFToken': csrftoken});
+    $('#submit').hide();
+    $.ajax({
+        type: 'POST',
+        headers: {'X-CSRFToken': csrftoken},
+        url: "/",
+        data: {
+            temperature : $("#temperature").val(),
+
+            pressure : $("#pressure").val(),
+
+            ozone : $("#ozone").val(),
+
+            humidity : $("#humidity").val(),
+
+            city : $("#city").val(),
+
+            time : $("#time").val(),
+
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+
+            display_temperature : $( ".t" ).text(),
+            display_pressure : $( ".p" ).text(),
+            display_ozone : $( ".o3" ).text(),
+            display_humidity : $( ".h" ).text(),
+            display_city : $( ".c" ).text(),
+            display_time : $( ".time" ).text(),
+        },
+        success: function(data) {
+           $('#submit').show();
+      }
+    });
+
+});
+$('#fetch').click(function(){
+    $.ajax({
+        type: "GET",
+        url: "/read",
+        success: function(result) {
+            //console.log(result);
+            $( ".t" ).text( "Temperature: " + result.temperature );
+            $( ".p" ).text( "Pressure: " + result.pressure );
+            $( ".h" ).text( "Humidity: " + result.humidity );
+            $( ".o3" ).text( "Ozone: " + result.ozone );
+            $( ".c" ).text( "City: " + result.city );
+            $( ".time" ).text( "Epoch Time: " + result.time );
+
+        },
+        error: function(result) {
+            alert('error');
+        }
+    });
+});
+</script>
+</body>
+
+
