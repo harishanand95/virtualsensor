@@ -9,4 +9,5 @@ multidict==3.2.0
 pytz==2017.2
 requests==2.18.4
 urllib3==1.22
+whitenoise==3.3.1
 yarl==0.12.0
