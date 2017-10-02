@@ -14,6 +14,7 @@ child = None
 def create_tcp_connection():
     """ Creates a single tcp connection to middleware and writes its streaming contents asynchronously to a file
     named output.txt"""
+    kill_child()
     global child
     child = subprocess.Popen(["python3", "air_pollution/async_http_read_files/async_http_read.py",
                               "https://smartcity.rbccps.org/api/0.1.0/subscribe?name=virtual_device_demo_subscriber"])
@@ -35,8 +36,7 @@ atexit.register(kill_child)
 def index(request):
     """ Renders the page '/' """
     data = dict()
-    if child is None:
-        create_tcp_connection()
+    create_tcp_connection()
     if request.method == 'POST':
         if not request.POST._mutable:
             request.POST._mutable = True
@@ -87,18 +87,16 @@ def index(request):
 def manually_restart_async(request):
     """ Manually tries to run async_http_read.py incase of failures at /restart"""
     if child is not None:
-        kill_child()
-        create_tcp_connection()
         context = {"connection": "restarted"}
     else:
         context = {"connection": "started"}
-        create_tcp_connection()
+    create_tcp_connection()
     return JsonResponse(context)
 
 
 def read_from_file(request):
     """ Reads from output.txt file the json data that came from the middleware."""
-
+    create_tcp_connection()
     with open('air_pollution/async_http_read_files/output.txt') as f:
         content = json.loads(f.read())
     return JsonResponse(content["data_schema"])
