@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
+    <link rel="stylesheet" href="{% static 'style.css' %}" >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="{% static 'normalize.css' %}">
+    <link rel="stylesheet" href="{% static 'skeleton.css' %}">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <title>Virtual Sensor Demo</title>
+</head>
+<body class="bg" >
+    <div id="details1">Creating a new Virtual Sensor </div>
+    <pre class="prettyprinted" id="json1"></pre>
+    <div id="details2"></div>
+    <pre class="prettyprinted" id="json2"></pre>
+    <button class="four columns button-primary" onclick="location.href = '/';" id="return" type="submit" hidden>TEST APP</button>
+    <script type="text/javascript">
+    function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie != '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = jQuery.trim(cookies[i]);
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    var csrftoken = getCookie('csrftoken');
+    console.log({'X-CSRFToken': csrftoken});
+    function register() {
+        $.ajax({
+            type: 'POST',
+            headers: {'X-CSRFToken': csrftoken},
+            url: "/create",
+            data: {
+                'X-CSRFToken': csrftoken,
+                'request':'register'
+            },
+            success: function(data) {
+                $("#details1").text("Registering a new virtual sensor named virtual_device_" + csrftoken + " to MIDDLEWARE")
+                str = JSON.stringify(data, null, 4);
+                $("#json1").text(str)
+          }
+        });
+    };
+    function subscribe() {
+        $.ajax({
+            type: 'POST',
+            headers: {'X-CSRFToken': csrftoken},
+            url: "/create",
+            data: {
+                'X-CSRFToken': csrftoken,
+                'request':'subscribe'
+            },
+            success: function(data) {
+                console.log(data);
+                $("#details2").text("Connecting application to the new device's subscription queue in MIDDLEWARE ")
+                str = JSON.stringify(data, null, 4);
+                $("#json2").text(str)
+                $("#return").show()
+          }
+        });
+    };
+    setTimeout(register, 4000);
+    setTimeout(subscribe, 4000);
+    </script>
+</body>
+</html>

@@ -6,9 +6,16 @@ import requests
 import json
 from django.http import JsonResponse
 import time
+from pathlib import Path
 import subprocess
+from django.views.decorators.csrf import csrf_protect
 import atexit
+
 child = None
+token = None  #CSRF TOKEN
+device_apikey = None
+device_Subscription_Queue = None
+device_resourceID = None
 
 
 def create_tcp_connection():
@@ -17,7 +24,9 @@ def create_tcp_connection():
     kill_child()
     global child
     child = subprocess.Popen(["python3", "air_pollution/async_http_read_files/async_http_read.py",
-                              "https://smartcity.rbccps.org/api/0.1.0/subscribe?name=virtual_device_demo_subscriber"])
+                              "https://smartcity.rbccps.org/api/0.1.0/subscribe?name={0}".format(device_resourceID),
+                              "demo_{0}.txt".format(device_apikey),
+                              device_apikey])
 
 
 def kill_child():
@@ -33,10 +42,76 @@ def kill_child():
 atexit.register(kill_child)
 
 
+def register_new_device(user_token):
+    # http://rbccps.org/smartcity/doku.php
+    # provider (not publisher) api key, resourceID unique, service type
+    register_url = "https://smartcity.rbccps.org/api/0.1.0/register"
+
+    register_headers = {
+        "apikey": "d1fd0ddee6b94d048f4bbb4a854ce56b",
+        "resourceID": "virtual_device_{0}".format(user_token),
+        "serviceType": "publish,subscribe,historicData"
+    }
+    print(register_headers)
+    print("\nRegistering device virtual_device_{0} to Middleware".format(user_token))
+    r = requests.get(register_url, {}, headers=register_headers)
+    print(r.content)
+    response = json.loads(r.content)
+    if response["Registration"] == "failure":
+        response["status"] = "failure"
+    else:
+        response["status"] = "success"
+    return response
+
+
+def subscriber_bind_queue():
+    subscriber_url = "https://smartcity.rbccps.org/api/0.1.0/subscribe/bind"
+    subscriber_headers = {"apikey": device_apikey}
+    subscriber_data = {
+        "exchange": "amq.topic",
+        "keys": [device_resourceID],
+        "queue": device_Subscription_Queue
+    }
+    print("\nUsing Subscriber-Bind API to subscribe to {0} KEY in {1} QUEUE".format(device_resourceID,
+                                                                                          device_Subscription_Queue))
+    r = requests.post(subscriber_url, json=subscriber_data, headers=subscriber_headers)
+    print(r.content)
+    response = dict()
+    if 'bind queue ok' in str(r.content):
+        response["status"] = "success"
+    else:
+        response["status"] = "failure"
+    response["response"] = str(r.content)
+    return response
+
+
+def create(request):
+    if request.method == 'POST':
+        global device_apikey
+        global device_resourceID
+        global device_Subscription_Queue
+        global token
+        if token is None:
+            token = request.POST.get("X-CSRFToken")
+        if request.POST.get("request") == "register" and token == request.POST.get("X-CSRFToken"):
+            response = register_new_device(token)
+            if response["status"] == "success":
+                device_resourceID = response["ResourceID"]
+                device_Subscription_Queue = response["Subscription Queue Name"]
+                device_apikey = response["APIKey"]
+            return JsonResponse(response)
+        if request.POST.get("request") == "subscribe" and token == request.POST.get("X-CSRFToken"):
+            response = subscriber_bind_queue()
+            return JsonResponse(response)
+    return render(request, 'air_pollution/create.html', {})
+
+
+@csrf_protect
 def index(request):
     """ Renders the page '/' """
     data = dict()
-    create_tcp_connection()
+    if token is None:
+        return render(request, 'air_pollution/home.html', data)
     if request.method == 'POST':
         if not request.POST._mutable:
             request.POST._mutable = True
@@ -66,6 +141,7 @@ def index(request):
             send_data(form.cleaned_data)
 
     elif request.method == 'GET':
+        create_tcp_connection()
         api_json = fetch_data()
         data["city"] = api_json['data']['city']['name']
         data["geo"] = api_json['data']['city']['geo']
@@ -85,7 +161,7 @@ def index(request):
 
 
 def manually_restart_async(request):
-    """ Manually tries to run async_http_read.py incase of failures at /restart"""
+    """ Manually tries to run async_http_read.py in case of failures at /restart"""
     if child is not None:
         context = {"connection": "restarted"}
     else:
@@ -96,16 +172,22 @@ def manually_restart_async(request):
 
 def read_from_file(request):
     """ Reads from output.txt file the json data that came from the middleware."""
-    create_tcp_connection()
-    with open('air_pollution/async_http_read_files/output.txt') as f:
-        content = json.loads(f.read())
+    outfile = Path('air_pollution/async_http_read_files/files/demo_{0}.txt'.format(device_apikey))
+    if outfile.exists():
+        with open('air_pollution/async_http_read_files/files/demo_{0}.txt'.format(device_apikey)) as f:
+            content = json.loads(f.read())
+    else:
+        outfile = Path('air_pollution/async_http_read_files/files/output.txt')
+        if outfile.exists():
+            with open('air_pollution/async_http_read_files/files/output.txt') as f:
+                content = json.loads(f.read())
     return JsonResponse(content["data_schema"])
 
 
 def fetch_data(city="bangalore"):
     """ Fetches AQI data for bangalore from api.waqi.info site. """
-    token = "22a7ea10a287c7d9ff26771099a975f48db68e52"  # AQI api token
-    url = "http://api.waqi.info/feed/{0}/?token={1}".format(city, token)
+    api_token = "22a7ea10a287c7d9ff26771099a975f48db68e52"  # AQI api token
+    url = "http://api.waqi.info/feed/{0}/?token={1}".format(city, api_token)
     response = requests.get(url)
     return response.json()
 
@@ -144,12 +226,12 @@ def send_data(device_data=None):
         data["data_schema"] = device_data
 
     publish_url = "https://smartcity.rbccps.org/api/0.1.0/publish"
-    publish_headers = {"apikey": "1daa9ea1779642619e00d1e30163cb3e"}
+    publish_headers = {"apikey": device_apikey}
     publish_data = {"exchange": "amq.topic",
-                    "key": "virtual_device_demo_publisher",
+                    "key": device_resourceID,
                     "body": str(json.dumps(data))}
 
-    print("Provider: Sending data to Middleware\n")
+    print("Publisher: Sending data to Middleware\n")
     r = requests.post(publish_url, json.dumps(publish_data), headers=publish_headers)
-    print("Provider: Received response from Middleware\n")
+    print("Publisher: Received response from Middleware\n")
     print(r.content)

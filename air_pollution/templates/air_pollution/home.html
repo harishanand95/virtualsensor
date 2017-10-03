@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+{% load static %}
+{% csrf_token %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
+    <link rel="stylesheet" href="{% static 'style.css' %}" >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="{% static 'normalize.css' %}">
+    <link rel="stylesheet" href="{% static 'skeleton.css' %}">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <title>Virtual Sensor Demo</title>
+</head>
+<body class="bg" >
+<div>
+<div id="details1"> Creating a new Virtual Sensor </div>
+    <input class="four columns button-primary" onclick="location.href = '/create';" id="create" type="submit" value="Create Sensor">
+</div>
+<script type="text/javascript">
+</script>
+</body>
+</html>

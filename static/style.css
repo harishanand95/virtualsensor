@@ -2,7 +2,9 @@
     padding:0;
     margin:0;
 }
-
+.bg {
+    background:#78C1CA;
+}
 .fleft {
     float: left;
     width: 50%;
@@ -67,6 +69,7 @@
     position: absolute;
     padding-left: 225px;
 }
+
 .c {
     font-size: 14px;
     color: #EDFFFF;
@@ -90,4 +93,42 @@
 
 .submit{
     padding-left: 100px;
+}
+#create{
+    position: relative;
+    top: 125px;
+    left: 150px;
+}
+#return{
+    position: relative;
+    top: 350px;
+    left: 359px;
+}
+#json1{
+    top: 150px;
+    left: 250px;
+    position: relative;
+}
+#json2{
+    top: 325px;
+    left: 250px;
+    position: relative;
+}
+#details1{
+    position: absolute;
+    top:0;
+    bottom: 535px;
+    left: 250px;
+    right: 0;
+    margin: auto;
+    height: 100px;
+}
+#details2{
+    position: absolute;
+    top:0;
+    bottom: -200px;
+    left: 250px;
+    right: 0;
+    margin: auto;
+    height: 100px;
 }

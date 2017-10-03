@@ -6,6 +6,7 @@ Django==1.11.5
 gunicorn==19.7.1
 idna==2.6
 multidict==3.2.0
+pathlib==1.0.1
 pytz==2017.2
 requests==2.18.4
 urllib3==1.22

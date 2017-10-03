@@ -26,7 +26,7 @@ SECRET_KEY = '%r1g%uf5b$_1e+$r*t@$kl0mo%$y#$^d0+oj+4m03mobk3o$*c'
 DEBUG = False
 
 ALLOWED_HOSTS = ['*']
-
+CSRF_COOKIE_AGE = None
 
 # Application definition
 
