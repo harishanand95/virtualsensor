@@ -48,7 +48,8 @@
             success: function(data) {
                 $("#details1").text("Registering a new virtual sensor named virtual_device_" + csrftoken + " to MIDDLEWARE")
                 str = JSON.stringify(data, null, 4);
-                $("#json1").text(str)
+                $("#json1").text(str);
+                setTimeout(subscribe, 4000);
           }
         });
     };
@@ -71,7 +72,6 @@
         });
     };
     setTimeout(register, 4000);
-    setTimeout(subscribe, 4000);
     </script>
 </body>
 </html>
