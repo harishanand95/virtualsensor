@@ -13,7 +13,7 @@ import atexit
 from .models import User
 
 child = None
-token = None  #CSRF TOKEN
+token = None
 device_apikey = None
 device_Subscription_Queue = None
 device_resourceID = None
