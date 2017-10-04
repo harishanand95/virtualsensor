@@ -9,25 +9,21 @@ import time
 from pathlib import Path
 import subprocess
 from django.views.decorators.csrf import csrf_protect
+from django.middleware.csrf import get_token
 import atexit
 from .models import User
-
 child = None
-token = None
-device_apikey = None
-device_Subscription_Queue = None
-device_resourceID = None
 
 
-def create_tcp_connection():
+def create_tcp_connection(api_key, resource_id):
     """ Creates a single tcp connection to middleware and writes its streaming contents asynchronously to a file
     named output.txt"""
     kill_child()
     global child
     child = subprocess.Popen(["python3", "air_pollution/async_http_read_files/async_http_read.py",
-                              "https://smartcity.rbccps.org/api/0.1.0/subscribe?name={0}".format(device_resourceID),
-                              "demo_{0}.txt".format(device_apikey),
-                              device_apikey])
+                              "https://smartcity.rbccps.org/api/0.1.0/subscribe?name={0}".format(resource_id),
+                              "demo_{0}.txt".format(api_key),
+                              api_key])
 
 
 def kill_child():
@@ -66,6 +62,7 @@ def register_new_device(user_token):
     r = requests.get(register_url, {}, headers=register_headers)
     print(r.content.decode("utf-8"))
     response = json.loads(r.content.decode("utf-8"))
+    # Add status to response
     if response["Registration"] == "failure":
         response["status"] = "failure"
     else:
@@ -94,6 +91,7 @@ def subscriber_bind_queue(token):
     print(r.content.decode("utf-8"))
     print(subscriber_url, subscriber_data, subscriber_headers)
     response = dict()
+    # Add 'status' to response
     if 'bind queue ok' in str(r.content.decode("utf-8")):
         response["status"] = "success"
     else:
@@ -104,36 +102,26 @@ def subscriber_bind_queue(token):
 
 def create(request):
     if request.method == 'POST':
-        global device_apikey
-        global device_resourceID
-        global device_Subscription_Queue
-        global token
-        if token is None:
-            token = request.POST.get("X-CSRFToken")
-        if request.POST.get("request") == "register" and token == request.POST.get("X-CSRFToken"):
+        print("COOKIE TOKEN:" + request.COOKIES['token'])
+        token = request.COOKIES['token']
+        # REGISTER API REQUEST
+        if request.POST.get("request") == "register":
             response = register_new_device(token)
             if response["status"] == "success":
-                # new session
-                device_resourceID = response["ResourceID"]
-                device_Subscription_Queue = response["Subscription Queue Name"]
-                device_apikey = response["APIKey"]
+                # Save new device details
                 session = User(token=token,
-                               api_key=device_apikey,
-                               subscription_queue=device_Subscription_Queue,
-                               resourceID=device_resourceID)
+                               api_key=response["APIKey"],
+                               subscription_queue=response["Subscription Queue Name"],
+                               resourceID=response["ResourceID"])
                 session.save()
             else:
-                # session exists case
-                session = User.objects.get(token=token)
-                device_resourceID = session.resourceID
-                device_Subscription_Queue = session.subscription_queue
-                device_apikey = session.api_key
-
+                # device already exists but in db
+                response["response"] = "Device not registered in local DB."
             return JsonResponse(response)
-        if request.POST.get("request") == "subscribe" and token == request.POST.get("X-CSRFToken"):
+        # SUBSCRIBE-BIND API REQUEST
+        if request.POST.get("request") == "subscribe":
             response = subscriber_bind_queue(token)
             return JsonResponse(response)
-
     return render(request, 'air_pollution/create.html', {})
 
 
@@ -141,13 +129,12 @@ def create(request):
 def index(request):
     """ Renders the page '/' """
     data = dict()
-    global device_apikey
-    global device_resourceID
-    global device_Subscription_Queue
-    global token
-
-    if token is None:
-        return render(request, 'air_pollution/home.html', data)
+    if 'token' in request.COOKIES and User.objects.filter(token=request.COOKIES['token']).exists():
+        token = request.COOKIES['token']
+    else:
+        response = render(request, 'air_pollution/login.html', {})
+        response.set_cookie('token', get_token(request), max_age=300)
+        return response
     if request.method == 'POST':
         if not request.POST._mutable:
             request.POST._mutable = True
@@ -175,18 +162,14 @@ def index(request):
             data["ozone"] = form.cleaned_data["ozone"]
             data["temperature"] = form.cleaned_data["temperature"]
             data["time"] = form.cleaned_data["time"]
-            send_data(form.cleaned_data)
+            send_data(token, form.cleaned_data)
 
     elif request.method == 'GET':
         session = User.objects.get(token=token)
-        device_resourceID = session.resourceID
-        device_Subscription_Queue = session.subscription_queue
-        device_apikey = session.api_key
-
-        create_tcp_connection()
+        create_tcp_connection(session.api_key, session.resourceID)
         api_json = fetch_data()
         data["city"] = api_json['data']['city']['name']
-        data["geo"] = api_json['data']['city']['geo']
+        data["geo"] = api_json['data']['city']['geo']  # not used
         data["humidity"] = api_json['data']['iaqi']['h']['v']
         data["pressure"] = api_json['data']['iaqi']['p']['v']
         data["ozone"] = api_json['data']['iaqi']['o3']['v']
@@ -202,22 +185,14 @@ def index(request):
     return render(request, 'air_pollution/index.html', data)
 
 
-def manually_restart_async(request):
-    """ Manually tries to run async_http_read.py in case of failures at /restart"""
-    if child is not None:
-        context = {"connection": "restarted"}
-    else:
-        context = {"connection": "started"}
-    create_tcp_connection()
-    return JsonResponse(context)
-
-
 def read_from_file(request):
     """ Reads from output.txt file the json data that came from the middleware."""
-    outfile = Path('air_pollution/async_http_read_files/files/demo_{0}.txt'.format(device_apikey))
+    token = request.COOKIES['token']
+    session = User.objects.get(token=token)
+    outfile = Path('air_pollution/async_http_read_files/files/demo_{0}.txt'.format(session.api_key))
     if outfile.exists():
-        print("\n*********    Reading from file demo_{0}    *********\n".format(device_apikey))
-        with open('air_pollution/async_http_read_files/files/demo_{0}.txt'.format(device_apikey)) as f:
+        print("\n*********    Reading from file demo_{0}    *********\n".format(session.api_key))
+        with open('air_pollution/async_http_read_files/files/demo_{0}.txt'.format(session.api_key)) as f:
             content = json.loads(f.read())
     else:
         print("\n*********    Reading from file output.txt    *********\n")
@@ -225,7 +200,6 @@ def read_from_file(request):
         if outfile.exists():
             with open('air_pollution/async_http_read_files/files/output.txt') as f:
                 content = json.loads(f.read())
-    print("\n*********    Closing File    *********\n")
     return JsonResponse(content["data_schema"])
 
 
@@ -237,8 +211,8 @@ def fetch_data(city="bangalore"):
     return response.json()
 
 
-def send_data(device_data=None):
-    """ Sends user input data or device data (data from aqi.waqi.info site) to the middleware"""
+def send_data(user_token, device_data=None):
+    """ Sends user input data or device data (data from aqi.waqi.info site) to the middleware. Follows Schema"""
     api_json = fetch_data()
     data = dict()
     data["id"] = "virtual_air_pollution_device_" + str(api_json["data"]["idx"])
@@ -270,10 +244,11 @@ def send_data(device_data=None):
     else:
         data["data_schema"] = device_data
 
+    session = User.objects.get(token=user_token)
     publish_url = "https://smartcity.rbccps.org/api/0.1.0/publish"
-    publish_headers = {"apikey": device_apikey}
+    publish_headers = {"apikey": session.api_key}
     publish_data = {"exchange": "amq.topic",
-                    "key": device_resourceID,
+                    "key": session.resourceID,
                     "body": str(json.dumps(data))}
 
     print("\n*********    Publisher: Sending data to Middleware    *********\n")

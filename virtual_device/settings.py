@@ -26,8 +26,6 @@ SECRET_KEY = '%r1g%uf5b$_1e+$r*t@$kl0mo%$y#$^d0+oj+4m03mobk3o$*c'
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
-CSRF_COOKIE_AGE = None
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -54,7 +52,9 @@ X_FRAME_OPTIONS = 'DENY'
 SESSION_COOKIE_SECURE = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
-
+SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+CSRF_COOKIE_AGE = 300
+SESSION_COOKIE_AGE = 300
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',

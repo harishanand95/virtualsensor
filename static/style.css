@@ -101,7 +101,7 @@
 }
 #return{
     position: relative;
-    top: 350px;
+    top: 284px;
     left: 359px;
 }
 #json1{
@@ -110,7 +110,7 @@
     position: relative;
 }
 #json2{
-    top: 325px;
+    top: 275px;
     left: 250px;
     position: relative;
 }
@@ -126,7 +126,7 @@
 #details2{
     position: absolute;
     top:0;
-    bottom: -200px;
+    bottom: -221px;
     left: 250px;
     right: 0;
     margin: auto;

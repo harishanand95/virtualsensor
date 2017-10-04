@@ -6,7 +6,7 @@ from contextlib import suppress
 chunk_size = 1024  # Set to 1 KB chunks
 
 async def download_url(url, output, apikey):
-    print('\n*********    Opening TCP conn: {}     *********\n'.format(url))
+    print('\n*********    Opening TCP: {}     *********\n'.format(url))
     headers = {'apikey': apikey}
     try:
         async with aiohttp.ClientSession() as session:
@@ -21,7 +21,7 @@ async def download_url(url, output, apikey):
     except Exception as e:
         print("\n*********    Oops: " + url + " " + str(type(e)) + str(e) + "     *********\n")
 
-    print('\n*********    Closing TCP conn: {}     *********\n'.format(url))
+    print('\n*********    Closing TCP: {}     *********\n'.format(url))
 
 def main():
     # get the URL from the command-line arguments
