@@ -65,7 +65,7 @@ def register_new_device(user_token):
     print("\n*********    Registering device to Middleware    *********\n")
     r = requests.get(register_url, {}, headers=register_headers)
     print(r.content)
-    response = json.loads(r.content)
+    response = json.loads(r.content.decode("utf-8"))
     if response["Registration"] == "failure":
         response["status"] = "failure"
     else:
