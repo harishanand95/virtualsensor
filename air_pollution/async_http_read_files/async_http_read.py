@@ -6,7 +6,7 @@ from contextlib import suppress
 chunk_size = 1024  # Set to 1 KB chunks
 
 async def download_url(url, output, apikey):
-    print('Opening TCP connection to the url: {} \n'.format(url))
+    print('\n*********    Opening TCP conn: {}     *********\n'.format(url))
     headers = {'apikey': apikey}
     try:
         async with aiohttp.ClientSession() as session:
@@ -19,9 +19,9 @@ async def download_url(url, output, apikey):
                     if not chunk:
                         break
     except Exception as e:
-        print("Oops: " + url + " " + str(type(e)) + str(e))
+        print("\n*********    Oops: " + url + " " + str(type(e)) + str(e) + "     *********\n")
 
-    print('Closing TCP connection to the url: {} \n'.format(url))
+    print('\n*********    Closing TCP conn: {}     *********\n'.format(url))
 
 def main():
     # get the URL from the command-line arguments
@@ -32,7 +32,6 @@ def main():
     arguments = parser.parse_args()
     try:
         loop = asyncio.get_event_loop()
-        print(arguments.url, arguments.writefile, arguments.apikey)
         loop.run_until_complete(download_url(arguments.url, arguments.writefile, arguments.apikey))
     except KeyboardInterrupt:  # kills all tasks when SIGTERM is given
         pending = asyncio.Task.all_tasks()
