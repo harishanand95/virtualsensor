@@ -64,7 +64,7 @@ def register_new_device(user_token):
 
     print("\n*********    Registering device to Middleware    *********\n")
     r = requests.get(register_url, {}, headers=register_headers)
-    print(r.content)
+    print(r.content.decode("utf-8"))
     response = json.loads(r.content.decode("utf-8"))
     if response["Registration"] == "failure":
         response["status"] = "failure"
@@ -73,29 +73,32 @@ def register_new_device(user_token):
     return response
 
 
-def subscriber_bind_queue():
+def subscriber_bind_queue(token):
     """ Subscriber or the new virtual device application is binded to the provider queue.
     Site: http://rbccps.org/smartcity/doku.php
 
     Returns:
          JsonResponse from the middleware
     """
+    session = User.objects.get(token=token)
     subscriber_url = "https://smartcity.rbccps.org/api/0.1.0/subscribe/bind"
-    subscriber_headers = {"apikey": device_apikey}
+    subscriber_headers = {"apikey": session.api_key}
     subscriber_data = {
         "exchange": "amq.topic",
-        "keys": [device_resourceID],
-        "queue": device_Subscription_Queue
+        "keys": [session.resourceID],
+        "queue": session.subscription_queue
     }
+
     print("\n*********    Using Subscriber-Bind API to subscribe    *********\n")
     r = requests.post(subscriber_url, json=subscriber_data, headers=subscriber_headers)
-    print(r.content)
+    print(r.content.decode("utf-8"))
+    print(subscriber_url, subscriber_data, subscriber_headers)
     response = dict()
-    if 'bind queue ok' in str(r.content):
+    if 'bind queue ok' in str(r.content.decode("utf-8")):
         response["status"] = "success"
     else:
         response["status"] = "failure"
-    response["response"] = str(r.content)
+    response["response"] = str(r.content.decode("utf-8"))
     return response
 
 
@@ -128,7 +131,7 @@ def create(request):
 
             return JsonResponse(response)
         if request.POST.get("request") == "subscribe" and token == request.POST.get("X-CSRFToken"):
-            response = subscriber_bind_queue()
+            response = subscriber_bind_queue(token)
             return JsonResponse(response)
 
     return render(request, 'air_pollution/create.html', {})
@@ -275,5 +278,5 @@ def send_data(device_data=None):
 
     print("\n*********    Publisher: Sending data to Middleware    *********\n")
     r = requests.post(publish_url, json.dumps(publish_data), headers=publish_headers)
-    print(r.content)
+    print(r.content.decode("utf-8"))
     print("\n*********    Publisher: Received response from Middleware    *********\n")
