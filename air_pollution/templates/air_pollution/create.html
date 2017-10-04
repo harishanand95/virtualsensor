@@ -46,10 +46,10 @@
                 'request':'register'
             },
             success: function(data) {
-                $("#details1").text("Registering a new virtual sensor named virtual_device_" + csrftoken + " to MIDDLEWARE")
+                $("#details1").text("Registering a new virtual sensor to MIDDLEWARE")
                 str = JSON.stringify(data, null, 4);
                 $("#json1").text(str);
-                setTimeout(subscribe, 4000);
+                setTimeout(subscribe, 3000);
           }
         });
     };
@@ -64,7 +64,7 @@
             },
             success: function(data) {
                 console.log(data);
-                $("#details2").text("Connecting application to the new device's subscription queue in MIDDLEWARE ")
+                $("#details2").text("Connecting new device as a subscriber to the provider's queue in MIDDLEWARE")
                 str = JSON.stringify(data, null, 4);
                 $("#json2").text(str)
                 $("#return").show()
