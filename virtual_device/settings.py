@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '%r1g%uf5b$_1e+$r*t@$kl0mo%$y#$^d0+oj+4m03mobk3o$*c'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 # Application definition
@@ -53,8 +53,9 @@ SESSION_COOKIE_SECURE = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
-CSRF_COOKIE_AGE = 300
+CSRF_COOKIE_AGE = 6000
 SESSION_COOKIE_AGE = 300
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',

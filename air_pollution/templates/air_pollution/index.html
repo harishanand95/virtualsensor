@@ -119,6 +119,10 @@ $("#submit").click(function(){
             display_time : $( ".time" ).text(),
         },
         success: function(data) {
+           console.log(data);
+           if (!(typeof data === 'object')) {
+             window.location.reload();
+           }
            $('#submit').show();
       }
     });
@@ -129,7 +133,9 @@ $('#fetch').click(function(){
         type: "GET",
         url: "/read",
         success: function(result) {
-            //console.log(result);
+            if ('restart' in result){
+                window.location.reload();
+            }
             $( ".t" ).text( "Temperature: " + result.temperature );
             $( ".p" ).text( "Pressure: " + result.pressure );
             $( ".h" ).text( "Humidity: " + result.humidity );

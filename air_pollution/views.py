@@ -9,6 +9,7 @@ import time
 from pathlib import Path
 import subprocess
 from django.views.decorators.csrf import csrf_protect
+from django.shortcuts import redirect
 from django.middleware.csrf import get_token
 import atexit
 from .models import User
@@ -102,7 +103,7 @@ def subscriber_bind_queue(token):
 
 def create(request):
     if request.method == 'POST':
-        print("COOKIE TOKEN:" + request.COOKIES['token'])
+        print("COOKIE TOKEN: " + request.COOKIES['token'])
         token = request.COOKIES['token']
         # REGISTER API REQUEST
         if request.POST.get("request") == "register":
@@ -125,16 +126,21 @@ def create(request):
     return render(request, 'air_pollution/create.html', {})
 
 
+def set_cookie(request):
+    response = render(request, 'air_pollution/login.html', {})
+    response.set_cookie('token', get_token(request), max_age=300)
+    return response
+
 @csrf_protect
 def index(request):
     """ Renders the page '/' """
     data = dict()
     if 'token' in request.COOKIES and User.objects.filter(token=request.COOKIES['token']).exists():
         token = request.COOKIES['token']
+        print("\n COOKIE TOKEN: " + request.COOKIES['token'])
     else:
-        response = render(request, 'air_pollution/login.html', {})
-        response.set_cookie('token', get_token(request), max_age=300)
-        return response
+        print("no cookie")
+        return set_cookie(request)
     if request.method == 'POST':
         if not request.POST._mutable:
             request.POST._mutable = True
@@ -163,7 +169,7 @@ def index(request):
             data["temperature"] = form.cleaned_data["temperature"]
             data["time"] = form.cleaned_data["time"]
             send_data(token, form.cleaned_data)
-
+        return JsonResponse({"status": "success"})
     elif request.method == 'GET':
         session = User.objects.get(token=token)
         create_tcp_connection(session.api_key, session.resourceID)
@@ -187,7 +193,11 @@ def index(request):
 
 def read_from_file(request):
     """ Reads from output.txt file the json data that came from the middleware."""
-    token = request.COOKIES['token']
+    if 'token' in request.COOKIES and User.objects.filter(token=request.COOKIES['token']).exists():
+        token = request.COOKIES['token']
+    else:
+        return JsonResponse({"restart": "true"})
+
     session = User.objects.get(token=token)
     outfile = Path('air_pollution/async_http_read_files/files/demo_{0}.txt'.format(session.api_key))
     if outfile.exists():
