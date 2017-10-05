@@ -77,6 +77,11 @@
     position: absolute;
     padding-left: 225px;
 }
+#clock{
+    background: lavender;
+    left: 177px;
+    position: inherit;
+}
 
 .time {
     font-size: 14px;

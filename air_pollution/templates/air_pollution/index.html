@@ -9,6 +9,7 @@
     <title>Virtual Sensor Demo</title>
 </head>
 <body class="wrap">
+<div id="clock">&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;Test this virtual sensor demo application for <span id="timer">05:00</span> minutes. After 5 minute expiry, the page will redirect to virtual sensor creation page. </div>
 <div class="fleft">
     <div class="vsensor">Virtual Sensor (Publisher)</div>
         {% csrf_token %}
@@ -73,82 +74,104 @@
         </div>
 </div>
 <script type="text/javascript">
-function getCookie(name) {
-    var cookieValue = null;
-    if (document.cookie && document.cookie != '') {
-        var cookies = document.cookie.split(';');
-        for (var i = 0; i < cookies.length; i++) {
-            var cookie = jQuery.trim(cookies[i]);
-            // Does this cookie string begin with the name we want?
-            if (cookie.substring(0, name.length + 1) == (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-$("#submit").click(function(){
-    var csrftoken = getCookie('csrftoken');
-    console.log({'X-CSRFToken': csrftoken});
-    $('#submit').hide();
-    $.ajax({
-        type: 'POST',
-        headers: {'X-CSRFToken': csrftoken},
-        url: "/",
-        data: {
-            temperature : $("#temperature").val(),
+    function startTimer(duration, display) {
+    var timer = duration, minutes, seconds;
+        setInterval(function () {
+            minutes = parseInt(timer / 60, 10);
+            seconds = parseInt(timer % 60, 10);
 
-            pressure : $("#pressure").val(),
+            minutes = minutes < 10 ? "0" + minutes : minutes;
+            seconds = seconds < 10 ? "0" + seconds : seconds;
 
-            ozone : $("#ozone").val(),
+            display.text(minutes + ":" + seconds);
 
-            humidity : $("#humidity").val(),
-
-            city : $("#city").val(),
-
-            time : $("#time").val(),
-
-            csrfmiddlewaretoken: '{{ csrf_token }}',
-
-            display_temperature : $( ".t" ).text(),
-            display_pressure : $( ".p" ).text(),
-            display_ozone : $( ".o3" ).text(),
-            display_humidity : $( ".h" ).text(),
-            display_city : $( ".c" ).text(),
-            display_time : $( ".time" ).text(),
-        },
-        success: function(data) {
-           console.log(data);
-           if (!(typeof data === 'object')) {
-             window.location.reload();
-           }
-           $('#submit').show();
-      }
-    });
-
-});
-$('#fetch').click(function(){
-    $.ajax({
-        type: "GET",
-        url: "/read",
-        success: function(result) {
-            if ('restart' in result){
+            if (--timer < 0) {
                 window.location.reload();
             }
-            $( ".t" ).text( "Temperature: " + result.temperature );
-            $( ".p" ).text( "Pressure: " + result.pressure );
-            $( ".h" ).text( "Humidity: " + result.humidity );
-            $( ".o3" ).text( "Ozone: " + result.ozone );
-            $( ".c" ).text( "City: " + result.city );
-            $( ".time" ).text( "Epoch Time: " + result.time );
+        }, 1000);
+    }
 
-        },
-        error: function(result) {
-            alert('error');
-        }
+    jQuery(function ($) {
+        var fiveMinutes = 60 * 5,
+            display = $('#timer');
+        startTimer(fiveMinutes, display);
     });
-});
+    function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie != '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = jQuery.trim(cookies[i]);
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    $("#submit").click(function(){
+        var csrftoken = getCookie('csrftoken');
+        console.log({'X-CSRFToken': csrftoken});
+        $('#submit').hide();
+        $.ajax({
+            type: 'POST',
+            headers: {'X-CSRFToken': csrftoken},
+            url: "/",
+            data: {
+                temperature : $("#temperature").val(),
+
+                pressure : $("#pressure").val(),
+
+                ozone : $("#ozone").val(),
+
+                humidity : $("#humidity").val(),
+
+                city : $("#city").val(),
+
+                time : $("#time").val(),
+
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+
+                display_temperature : $( ".t" ).text(),
+                display_pressure : $( ".p" ).text(),
+                display_ozone : $( ".o3" ).text(),
+                display_humidity : $( ".h" ).text(),
+                display_city : $( ".c" ).text(),
+                display_time : $( ".time" ).text(),
+            },
+            success: function(data) {
+               console.log(data);
+               if (!(typeof data === 'object')) {
+                 window.location.reload();
+               }
+               $('#submit').show();
+          }
+        });
+
+    });
+    $('#fetch').click(function(){
+        $.ajax({
+            type: "GET",
+            url: "/read",
+            success: function(result) {
+                if ('restart' in result){
+                    window.location.reload();
+                }
+                $( ".t" ).text( "Temperature: " + result.temperature );
+                $( ".p" ).text( "Pressure: " + result.pressure );
+                $( ".h" ).text( "Humidity: " + result.humidity );
+                $( ".o3" ).text( "Ozone: " + result.ozone );
+                $( ".c" ).text( "City: " + result.city );
+                $( ".time" ).text( "Epoch Time: " + result.time );
+
+            },
+            error: function(result) {
+                alert('error');
+            }
+        });
+    });
 </script>
 </body>
 
