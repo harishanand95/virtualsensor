@@ -9,7 +9,6 @@ import time
 from pathlib import Path
 import subprocess
 from django.views.decorators.csrf import csrf_protect
-from django.shortcuts import redirect
 from django.middleware.csrf import get_token
 import atexit
 from .models import User
@@ -61,8 +60,13 @@ def register_new_device(user_token):
 
     print("\n*********    Registering device to Middleware    *********\n")
     r = requests.get(register_url, {}, headers=register_headers)
-    print(r.content.decode("utf-8"))
-    response = json.loads(r.content.decode("utf-8"))
+    response = r.content.decode("utf-8")
+    print(response)
+    response = json.loads(response[:-331] + "}")  # Temporary fix to a middleware bug, should be removed in future
+    if "success" in r.content.decode("utf-8"):
+        response["Registration"] = "success"
+    else:
+        response["Registration"] = "failure"
     # Add status to response
     if response["Registration"] == "failure":
         response["status"] = "failure"
