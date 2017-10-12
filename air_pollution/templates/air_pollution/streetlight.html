@@ -16,6 +16,12 @@
 <body class="bg" >
 <div>
 <div id="sl"> Streetlight Demo</div>
+    <div id="slform1" class="row">
+      <div class="seven columns">
+          <label class="four columns" for="brightness">Api Key</label>
+          <input type="text" placeholder="apikey" id="apikey" name="apikey" class="four columns">
+      </div>
+    </div>
     <div id="slform" class="row">
       <div class="seven columns">
           <label class="four columns" for="brightness">Brightness Level</label>
@@ -27,6 +33,7 @@
             <input class="four columns button-primary" id="submit" type="submit" value="submit">
         </div>
     </div>
+    <pre class="prettyprinted" id="status"></pre>
 </div>
 <script type="text/javascript">
     function getCookie(name) {
@@ -55,7 +62,8 @@
                 brightness : $("#brightness").val(),
             },
             success: function(data) {
-               console.log(data);
+                str = JSON.stringify(data, null, 4);
+                $("#status").text(str)
           }
         });
     });
