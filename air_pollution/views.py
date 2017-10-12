@@ -269,3 +269,32 @@ def send_data(user_token, device_data=None):
     r = requests.post(publish_url, json.dumps(publish_data), headers=publish_headers)
     print(r.content.decode("utf-8"))
     print("\n*********    Publisher: Received response from Middleware    *********\n")
+
+def streetlight(request):
+    if request.method == 'GET':
+        return render(request, 'air_pollution/streetlight.html', {})
+    if request.method == 'POST':
+        if not request.POST._mutable:
+            request.POST._mutable = True
+        if request.POST["brightness"] == "":
+            request.POST["brightness"] = 0
+        print(request.POST["brightness"])
+        api_key = "beee69bb9d024fbf97800be726f85a57"
+        data = {
+            "ManualControlParams": {
+                "targetBrightnessLevel": request.POST["brightness"]
+            }
+        }
+        print(data)
+        resource_id = "70b3d58ff0031f00_update"
+        publish_url = "https://smartcity.rbccps.org/api/0.1.0/publish"
+        publish_headers = {"apikey": api_key}
+        publish_data = {"exchange": "amq.topic",
+                        "key": resource_id,
+                        "body": str(json.dumps(data))}
+
+        print("\n*********    Publisher: Sending data to Middleware    *********\n")
+        r = requests.post(publish_url, json.dumps(publish_data), headers=publish_headers)
+        print(r.content.decode("utf-8"))
+        print("\n*********    Publisher: Received response from Middleware    *********\n")
+        return render(request, 'air_pollution/streetlight.html', {})

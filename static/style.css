@@ -69,7 +69,11 @@
     position: absolute;
     padding-left: 225px;
 }
-
+#sl{
+    position: relative;
+    top: 100px;
+    left: 100px;
+}
 .c {
     font-size: 14px;
     color: #EDFFFF;
@@ -81,6 +85,16 @@
     background: lavender;
     left: 177px;
     position: inherit;
+}
+#slsubmit{
+    position: relative;
+    top: 275px;
+    left: 150px;
+}
+#slform{
+    position: relative;
+    top: 200px;
+    left: 100px;
 }
 
 .time {
