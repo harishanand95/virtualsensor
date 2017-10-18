@@ -272,6 +272,7 @@ def send_data(user_token, device_data=None):
 
 
 def streetlight(request):
+    """ renders /streetlight for testing purposes"""
     if request.method == 'GET':
         return render(request, 'air_pollution/streetlight.html', {})
     if request.method == 'POST':
@@ -294,6 +295,8 @@ def streetlight(request):
                         "body": str(json.dumps(data))}
 
         print("\n*********    Publisher: Sending data to Middleware    *********\n")
+        print(publish_headers)
+        print(publish_data)
         r = requests.post(publish_url, json.dumps(publish_data), headers=publish_headers)
         response = {
             "status": "success",

@@ -60,6 +60,7 @@
             url: "/streetlight",
             data: {
                 brightness : $("#brightness").val(),
+                apikey: $("#apikey").val(),
             },
             success: function(data) {
                 str = JSON.stringify(data, null, 4);
