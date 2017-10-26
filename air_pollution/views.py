@@ -300,7 +300,8 @@ def streetlight(request):
     if request.method == 'GET':
         if 'logintoken' in request.COOKIES:
             r = requests.get("https://smartcity.rbccps.org/api/0.1.0/cat/", {})
-            items = json.loads(r.content)["items"]
+            r = r.content.decode('utf-8')
+            items = json.loads(r)["items"]
             sl_items = list()
             for item in items:
                 if item["resourceType"] == "streetlight":
