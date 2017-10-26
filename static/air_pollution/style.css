@@ -5,6 +5,11 @@
 .bg {
     background:#78C1CA;
 }
+.slform2 {
+    position: relative;
+    top: 225px;
+    left: 99px;
+}
 .fleft {
     float: left;
     width: 50%;
@@ -90,6 +95,12 @@
     position: relative;
     top: 172px;
     left: 100px;
+}
+#slform3{
+    position: relative;
+    top: 172px;
+    left: 100px;
+    width: 930px;
 }
 #slsubmit{
     position: relative;

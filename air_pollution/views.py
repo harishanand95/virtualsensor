@@ -11,6 +11,7 @@ import subprocess
 from django.views.decorators.csrf import csrf_protect
 from django.middleware.csrf import get_token
 import atexit
+from django.shortcuts import redirect
 from .models import User
 child = None
 
@@ -46,9 +47,9 @@ def register_new_device(user_token):
 
     Site: http://rbccps.org/smartcity/doku.php
     Args:
-     user_token: user_token is unique id used to register new devices. It is derived from csrftoken.
+        user_token: user_token is unique id used to register new devices. It is derived from csrftoken.
     Returns:
-     response: A json response from the middleware
+        response: A json response from the middleware
     """
     register_url = "https://smartcity.rbccps.org/api/0.1.0/register"
 
@@ -271,33 +272,90 @@ def send_data(user_token, device_data=None):
     print("\n*********    Publisher: Received response from Middleware    *********\n")
 
 
-def streetlight(request):
-    """ renders /streetlight for testing purposes"""
+def signin(request):
+    """ A small signin page to avoid entering apikey each time. This is an insecure but easy hack intended and created only
+    for the demo purposes.
+    """
     if request.method == 'GET':
-        return render(request, 'air_pollution/streetlight.html', {})
+        return render(request, 'air_pollution/signin.html', {})
+    if request.method == 'POST':
+        if request.POST["username"] == "streetlight" and request.POST["password"] == "rbccps":
+            response = {
+                "status": "success",
+                "response": "Redirecting..."
+            }
+            response = JsonResponse(response)
+            response.set_cookie('logintoken', "rbccps123", max_age=3600)
+            return response
+        else:
+            response = {
+                "status": "failure",
+                "response": "Username and password wrong. Contact admin."
+            }
+            return JsonResponse(response)
+
+
+def streetlight(request):
+    """ renders /streetlight for testing purposes """
+    if request.method == 'GET':
+        if 'logintoken' in request.COOKIES:
+            r = requests.get("https://smartcity.rbccps.org/api/0.1.0/cat/", {})
+            items = json.loads(r.content)["items"]
+            sl_items = list()
+            for item in items:
+                if item["resourceType"] == "streetlight":
+                    sl_items.append(item["id"])
+            return render(request, 'air_pollution/streetlight.html', {"sl_items": sl_items})
+        else:
+            return redirect('/signin')
+
     if request.method == 'POST':
         if not request.POST._mutable:
             request.POST._mutable = True
-        if request.POST["brightness"] == "":
-            request.POST["brightness"] = 0
-        print(request.POST.get("brightness"))
-        api_key = request.POST.get("apikey")
-        data = {
-            "ManualControlParams": {
-                "targetBrightnessLevel": request.POST["brightness"]
-            }
-        }
-        resource_id = "70b3d58ff0031f00_update"
-        publish_url = "https://smartcity.rbccps.org/api/0.1.0/publish"
-        publish_headers = {"apikey": api_key}
-        publish_data = {"exchange": "amq.topic",
-                        "key": resource_id,
-                        "body": str(json.dumps(data))}
 
-        print("\n*********    Publisher: Sending data to Middleware    *********\n")
-        print(publish_headers)
-        print(publish_data)
-        r = requests.post(publish_url, json.dumps(publish_data), headers=publish_headers)
+        api_key = "beee69bb9d024fbf97800be726f85a57"
+        mode = request.POST.get("tcp")
+        command = {}
+
+        if mode == "manual":
+            try:
+                if int(request.POST["brightness"]) < 0:
+                    request.POST["brightness"] = 0
+                if int(request.POST["brightness"]) > 100:
+                    request.POST["brightness"] = 100
+                command["ManualControlParams"] = {}
+                command["ManualControlParams"]["targetBrightnessLevel"] = int(request.POST.get("brightness"))
+            except ValueError as v:
+                response = {
+                    "status": "failure",
+                    "response": "Integer value  is expected on Brightness"
+                }
+                return JsonResponse(response)
+
+        if mode == "timer":
+            try:
+                command["AutoTimerParams"] = {}
+                command["AutoTimerParams"]["targetOnTime"] = int(request.POST.get("on")) * 60 * 1000
+                command["AutoTimerParams"]["targetOffTime"] = int(request.POST.get("off")) * 60 * 1000
+            except ValueError as e:
+                response = {
+                    "status": "failure",
+                    "response": "Integer value is expected on ON and OFF time"
+                }
+                return JsonResponse(response)
+
+        devices = request.POST.getlist('sl[]')
+        r = ""
+        if len(devices) == 0:
+            response = {
+                "status": "failure",
+                "response": "Expected atleast 1 streetlight"
+            }
+            return JsonResponse(response)
+        else:
+            for device_id in devices:
+                resource_id = device_id + "_update"
+                r = publish(api_key, resource_id, command)
         response = {
             "status": "success",
             "response": r.content.decode("utf-8")
@@ -305,3 +363,27 @@ def streetlight(request):
         print(response)
         print("\n*********    Publisher: Received response from Middleware    *********\n")
         return JsonResponse(response)
+
+
+def publish(api_key, resource_id, data):
+    """ Publishes the streetlight data to the middleware.
+    Publish URL: https://smartcity.rbccps.org/api/0.1.0/publish
+
+    Args:
+        api_key: apikey of the device
+        resource_id: device id name
+        data: json formatted data to be published
+    Returns:
+        response: requests response object
+    """
+    publish_url = "https://smartcity.rbccps.org/api/0.1.0/publish"
+    publish_headers = {"apikey": api_key}
+
+    publish_data = {"exchange": "amq.topic",
+                    "key": resource_id,
+                    "body": str(json.dumps(data))}
+
+    print("\n*********    Publisher: Sending data to Middleware    *********\n")
+    print(publish_headers)
+    print(publish_data)
+    return requests.post(publish_url, json.dumps(publish_data), headers=publish_headers)

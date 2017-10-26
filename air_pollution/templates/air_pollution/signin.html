@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+{% load static %}
+{% csrf_token %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
+    <link rel="stylesheet" href="{% static 'style.css' %}" >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="{% static 'normalize.css' %}">
+    <link rel="stylesheet" href="{% static 'skeleton.css' %}">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <title>Virtual Sensor Demo</title>
+</head>
+<body class="bg" >
+<div>
+<div id="sl"> Sign in to use the streetlight demo</div>
+    <div id="slform1" class="row">
+      <div class="seven columns">
+          <label class="four columns" for="username">Username</label>
+          <input type="text" placeholder="username" id="username" name="username" class="four columns">
+      </div>
+    </div>
+    <div id="slform" class="row">
+      <div class="seven columns">
+          <label class="four columns" for="password">Password</label>
+          <input type="password" id="password" name="password" class="four columns">
+      </div>
+    </div>
+    <div id="slsubmit" class="row">
+        <div class="seven columns submit">
+            <input class="four columns button-primary" id="submit" type="submit" value="submit">
+        </div>
+    </div>
+    <pre class="prettyprinted" id="status"></pre>
+</div>
+<script type="text/javascript">
+    function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie != '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = jQuery.trim(cookies[i]);
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    $("#submit").click(function(){
+        var csrftoken = getCookie('csrftoken');
+        console.log({'X-CSRFToken': csrftoken});
+        $.ajax({
+            type: 'POST',
+            headers: {'X-CSRFToken': csrftoken},
+            url: "/signin",
+            data: {
+                username : $("#username").val(),
+                password: $("#password").val(),
+            },
+            success: function(data) {
+                str = JSON.stringify(data, null, 4);
+                $("#status").text(str)
+                if (data["status"] == "success"){
+                    window.location.href = '/streetlight';
+                }
+          }
+        });
+    });
+</script>
+</body>
+</html>
