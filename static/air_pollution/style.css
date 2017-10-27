@@ -14,14 +14,14 @@
     float: left;
     width: 50%;
     background: pink;
-    height: -webkit-fill-available;
+    height: 100%;
     box-sizing: border-box;
 }
 
 .fright {
     float: right;
     background:#78C1CA;
-    height: -webkit-fill-available;
+    height: 100%;
     width: 50%;
     box-sizing:border-box;
 
