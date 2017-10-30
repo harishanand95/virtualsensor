@@ -9,7 +9,7 @@ async def download_url(url, output, apikey):
     print('\n*********    Opening TCP: {}     *********\n'.format(url))
     headers = {'apikey': apikey}
     try:
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
             async with session.get(url, headers=headers, timeout=None) as response:
                 while True:
                     chunk = await response.content.read(chunk_size)
