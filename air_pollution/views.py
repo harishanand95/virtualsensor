@@ -13,7 +13,37 @@ from django.middleware.csrf import get_token
 import atexit
 from django.shortcuts import redirect
 from .models import User
+import warnings
+import contextlib
+
 child = None
+
+requests.packages.urllib3.disable_warnings()
+
+try:
+    from functools import partialmethod
+except ImportError:
+    # Python 2 fallback: https://gist.github.com/carymrobbins/8940382
+    from functools import partial
+
+    class partialmethod(partial):
+        def __get__(self, instance, owner):
+            if instance is None:
+                return self
+
+            return partial(self.func, instance, *(self.args or ()), **(self.keywords or {}))
+
+
+@contextlib.contextmanager
+def no_ssl_verification():
+    old_request = requests.Session.request
+    requests.Session.request = partialmethod(old_request, verify=False)
+
+    warnings.filterwarnings('ignore', 'Unverified HTTPS request')
+    yield
+    warnings.resetwarnings()
+
+    requests.Session.request = old_request
 
 
 def create_tcp_connection(api_key, resource_id):
@@ -60,7 +90,8 @@ def register_new_device(user_token):
     }
 
     print("\n*********    Registering device to Middleware    *********\n")
-    r = requests.get(register_url, {}, headers=register_headers)
+    with no_ssl_verification():
+        r = requests.get(register_url, {}, headers=register_headers)
     response = r.content.decode("utf-8")
     print(response)
     response = json.loads(response[:-331] + "}")  # Temporary fix to a middleware bug, should be removed in future
@@ -93,7 +124,8 @@ def subscriber_bind_queue(token):
     }
 
     print("\n*********    Using Subscriber-Bind API to subscribe    *********\n")
-    r = requests.post(subscriber_url, json=subscriber_data, headers=subscriber_headers)
+    with no_ssl_verification():
+        r = requests.post(subscriber_url, json=subscriber_data, headers=subscriber_headers)
     print(r.content.decode("utf-8"))
     print(subscriber_url, subscriber_data, subscriber_headers)
     response = dict()
@@ -222,7 +254,8 @@ def fetch_data(city="bangalore"):
     """ Fetches AQI data for bangalore from api.waqi.info site. """
     api_token = "22a7ea10a287c7d9ff26771099a975f48db68e52"  # AQI api token
     url = "http://api.waqi.info/feed/{0}/?token={1}".format(city, api_token)
-    response = requests.get(url)
+    with no_ssl_verification():
+        response = requests.get(url)
     return response.json()
 
 
@@ -267,7 +300,8 @@ def send_data(user_token, device_data=None):
                     "body": str(json.dumps(data))}
 
     print("\n*********    Publisher: Sending data to Middleware    *********\n")
-    r = requests.post(publish_url, json.dumps(publish_data), headers=publish_headers)
+    with no_ssl_verification():
+        r = requests.post(publish_url, json.dumps(publish_data), headers=publish_headers)
     print(r.content.decode("utf-8"))
     print("\n*********    Publisher: Received response from Middleware    *********\n")
 
@@ -299,7 +333,8 @@ def streetlight(request):
     """ renders /streetlight for testing purposes """
     if request.method == 'GET':
         if 'logintoken' in request.COOKIES:
-            r = requests.get("https://smartcity.rbccps.org/api/0.1.0/cat/", {})
+            with no_ssl_verification():
+                r = requests.get("https://smartcity.rbccps.org/api/0.1.0/cat/", {})
             r = r.content.decode('utf-8')
             items = json.loads(r)["items"]
             sl_items = list()
@@ -387,4 +422,6 @@ def publish(api_key, resource_id, data):
     print("\n*********    Publisher: Sending data to Middleware    *********\n")
     print(publish_headers)
     print(publish_data)
-    return requests.post(publish_url, json.dumps(publish_data), headers=publish_headers)
+    with no_ssl_verification():
+        r = requests.post(publish_url, json.dumps(publish_data), headers=publish_headers)
+    return r
